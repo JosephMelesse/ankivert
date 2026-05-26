@@ -1,0 +1,9 @@
+# personal local config (copy local_config.example.json and fill in your path)
+local_config.json
+
+# runtime
+.ankivert_ledger.json
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
