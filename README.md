@@ -1,10 +1,10 @@
-# anki_vert
+# ankivert
 
 Converts Obsidian markdown notes into Anki flashcards. Scans a vault directory for cards written in a simple `Q:` / `A:` syntax, then syncs them to Anki via the AnkiConnect plugin. A persistent ledger tracks which cards have already been added so re-runs never create duplicates.
 
 ---
 
-<!-- screenshot -->
+![ankivert TUI](ankivert.png)
 
 ---
 
