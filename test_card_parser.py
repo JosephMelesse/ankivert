@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from card_parser import (
     build_deck_name,
+    discover_classes,
     extract_cards_from_markdown,
     iter_md_files,
     stable_id_tag,
@@ -222,6 +223,40 @@ def test_iter_md_files_warns_on_missing_dir(tmp_path, capsys):
     list(iter_md_files(vault, ["nonexistent"]))
     err = capsys.readouterr().err
     assert "nonexistent" in err
+
+
+# ---------------------------------------------------------------------------
+# discover_classes
+# ---------------------------------------------------------------------------
+
+
+def test_discover_classes_returns_subdirs(tmp_path):
+    vault = tmp_path / "vault"
+    (vault / "python").mkdir(parents=True)
+    (vault / "sql").mkdir()
+    (vault / "notes.md").write_text("content")
+    assert discover_classes(vault) == ["python", "sql"]
+
+
+def test_discover_classes_excludes_hidden(tmp_path):
+    vault = tmp_path / "vault"
+    vault.mkdir()
+    (vault / "python").mkdir()
+    (vault / ".obsidian").mkdir()
+    (vault / ".git").mkdir()
+    assert discover_classes(vault) == ["python"]
+
+
+def test_discover_classes_sorted(tmp_path):
+    vault = tmp_path / "vault"
+    vault.mkdir()
+    for name in ["zzz", "aaa", "mmm"]:
+        (vault / name).mkdir()
+    assert discover_classes(vault) == ["aaa", "mmm", "zzz"]
+
+
+def test_discover_classes_missing_vault(tmp_path):
+    assert discover_classes(tmp_path / "nonexistent") == []
 
 
 def test_iter_md_files_recurses(tmp_path):
