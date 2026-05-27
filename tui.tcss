@@ -1,0 +1,180 @@
+Screen {
+    background: #121212;
+    color: #e68200;
+}
+
+#banner {
+    height: 7;
+    color: #e68200;
+    content-align: center middle;
+    background: #121212;
+    padding: 1 2 0 2;
+}
+
+Footer {
+    background: #1a1a1a;
+    color: #e68200;
+}
+
+Footer > FooterKey {
+    background: #1a1a1a;
+    color: #e68200;
+}
+
+Footer > FooterKey > .footer-key--key {
+    background: #121212;
+    color: #fff500;
+}
+
+Footer > FooterKey > .footer-key--description {
+    color: #e68200;
+}
+
+#layout {
+    padding: 1 2;
+    height: 1fr;
+}
+
+#vault-row {
+    height: 3;
+    margin-bottom: 1;
+    align: left middle;
+}
+
+#vault-label {
+    width: 8;
+    content-align: left middle;
+    color: #e68200;
+}
+
+#vault-input {
+    width: 1fr;
+    background: #1a1a1a;
+    color: #e68200;
+    border: tall #e68200;
+}
+
+#vault-input:focus {
+    border: tall #fff500;
+}
+
+#btn-edit {
+    margin-left: 1;
+    background: #121212;
+    color: #e68200;
+    border: tall #e68200;
+}
+
+#btn-edit:hover {
+    background: #2a1400;
+    color: #fff500;
+    border: tall #fff500;
+}
+
+#btn-edit:focus {
+    border: tall #fff500;
+    color: #fff500;
+}
+
+#action-row {
+    height: 3;
+    margin-bottom: 1;
+    align: left middle;
+}
+
+#action-row Button {
+    margin-right: 1;
+    background: #121212;
+    color: #e68200;
+    border: tall #e68200;
+}
+
+#action-row Button:hover {
+    background: #2a1400;
+    color: #fff500;
+    border: tall #fff500;
+}
+
+#action-row Button:focus {
+    border: tall #fff500;
+    color: #fff500;
+}
+
+#status {
+    height: 1;
+    margin-bottom: 1;
+    color: #e68200;
+}
+
+#anki-status {
+    height: 1;
+    margin-bottom: 1;
+    color: #7a4800;
+}
+
+DataTable {
+    height: 1fr;
+    background: #121212;
+    color: #e68200;
+}
+
+DataTable > .datatable--header {
+    background: #1a1a1a;
+    color: #fff500;
+}
+
+DataTable > .datatable--cursor {
+    background: #2a1400;
+    color: #fff500;
+}
+
+DataTable > .datatable--even-row {
+    background: #1a1a1a;
+}
+
+DataTable > .datatable--odd-row {
+    background: #121212;
+}
+
+QuitConfirm {
+    align: center middle;
+}
+
+#confirm-box {
+    background: #1a1a1a;
+    border: tall #e68200;
+    padding: 1 2;
+    width: 40;
+    height: auto;
+    align: center middle;
+}
+
+#confirm-title {
+    color: #e68200;
+    content-align: center middle;
+    width: 1fr;
+    margin-bottom: 1;
+}
+
+#confirm-btns {
+    align: center middle;
+    height: 3;
+}
+
+#confirm-btns Button {
+    margin: 0 1;
+    background: #121212;
+    color: #e68200;
+    border: tall #e68200;
+}
+
+#confirm-btns Button:hover {
+    background: #2a1400;
+    color: #fff500;
+    border: tall #fff500;
+}
+
+#confirm-yes:focus, #confirm-no:focus {
+    border: tall #fff500;
+    color: #fff500;
+}

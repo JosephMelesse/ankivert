@@ -10,9 +10,10 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, DataTable, Footer, Input, Label, Static
 
 from ankiconnect_client import ankiconnect
+from card_parser import discover_classes
 from config import DEFAULT_CLASSES, DEFAULT_VAULT_PATH
 from ledger import load_ledger, record_cards_in_ledger, save_ledger
-from sync_service import collect_cards, sync_cards
+from sync_service import collect_cards, find_stale_decks, remove_stale_decks, sync_cards
 
 DEFAULT_VAULT = DEFAULT_VAULT_PATH
 
@@ -48,196 +49,8 @@ class StatusBar(Static):
         self.update(f"status: {text}")
 
 
-ORANGE = "#e68200"
-YELLOW = "#fff500"
-BG = "#121212"
-PANEL = "#1a1a1a"
-DIM = "#7a4800"
-
-
 class AnkiVertApp(App):
-    CSS = f"""
-    Screen {{
-        background: {BG};
-        color: {ORANGE};
-    }}
-
-    #banner {{
-        height: 7;
-        color: {ORANGE};
-        content-align: center middle;
-        background: {BG};
-        padding: 1 2 0 2;
-    }}
-
-    Footer {{
-        background: {PANEL};
-        color: {ORANGE};
-    }}
-
-    Footer > FooterKey {{
-        background: {PANEL};
-        color: {ORANGE};
-    }}
-
-    Footer > FooterKey > .footer-key--key {{
-        background: {BG};
-        color: {YELLOW};
-    }}
-
-    Footer > FooterKey > .footer-key--description {{
-        color: {ORANGE};
-    }}
-
-    #layout {{
-        padding: 1 2;
-        height: 1fr;
-    }}
-
-    #vault-row {{
-        height: 3;
-        margin-bottom: 1;
-        align: left middle;
-    }}
-
-    #vault-label {{
-        width: 8;
-        content-align: left middle;
-        color: {ORANGE};
-    }}
-
-    #vault-input {{
-        width: 1fr;
-        background: {PANEL};
-        color: {ORANGE};
-        border: tall {ORANGE};
-    }}
-
-    #vault-input:focus {{
-        border: tall {YELLOW};
-    }}
-
-    #btn-edit {{
-        margin-left: 1;
-        background: {BG};
-        color: {ORANGE};
-        border: tall {ORANGE};
-    }}
-
-    #btn-edit:hover {{
-        background: #2a1400;
-        color: {YELLOW};
-        border: tall {YELLOW};
-    }}
-
-    #btn-edit:focus {{
-        border: tall {YELLOW};
-        color: {YELLOW};
-    }}
-
-    #action-row {{
-        height: 3;
-        margin-bottom: 1;
-        align: left middle;
-    }}
-
-    #action-row Button {{
-        margin-right: 1;
-        background: {BG};
-        color: {ORANGE};
-        border: tall {ORANGE};
-    }}
-
-    #action-row Button:hover {{
-        background: #2a1400;
-        color: {YELLOW};
-        border: tall {YELLOW};
-    }}
-
-    #action-row Button:focus {{
-        border: tall {YELLOW};
-        color: {YELLOW};
-    }}
-
-    #status {{
-        height: 1;
-        margin-bottom: 1;
-        color: {ORANGE};
-    }}
-
-    #anki-status {{
-        height: 1;
-        margin-bottom: 1;
-        color: {DIM};
-    }}
-
-    DataTable {{
-        height: 1fr;
-        background: {BG};
-        color: {ORANGE};
-    }}
-
-    DataTable > .datatable--header {{
-        background: {PANEL};
-        color: {YELLOW};
-    }}
-
-    DataTable > .datatable--cursor {{
-        background: #2a1400;
-        color: {YELLOW};
-    }}
-
-    DataTable > .datatable--even-row {{
-        background: {PANEL};
-    }}
-
-    DataTable > .datatable--odd-row {{
-        background: {BG};
-    }}
-
-    QuitConfirm {{
-        align: center middle;
-    }}
-
-    #confirm-box {{
-        background: {PANEL};
-        border: tall {ORANGE};
-        padding: 1 2;
-        width: 40;
-        height: auto;
-        align: center middle;
-    }}
-
-    #confirm-title {{
-        color: {ORANGE};
-        content-align: center middle;
-        width: 1fr;
-        margin-bottom: 1;
-    }}
-
-    #confirm-btns {{
-        align: center middle;
-        height: 3;
-    }}
-
-    #confirm-btns Button {{
-        margin: 0 1;
-        background: {BG};
-        color: {ORANGE};
-        border: tall {ORANGE};
-    }}
-
-    #confirm-btns Button:hover {{
-        background: #2a1400;
-        color: {YELLOW};
-        border: tall {YELLOW};
-    }}
-
-    #confirm-yes:focus, #confirm-no:focus {{
-        border: tall {YELLOW};
-        color: {YELLOW};
-    }}
-    """
+    CSS_PATH = "tui.tcss"
 
     BINDINGS = [
         Binding("ctrl+c", "confirm_quit", "Quit"),
@@ -272,6 +85,7 @@ class AnkiVertApp(App):
         table.add_columns("deck", "front", "back")
         table.focus()
         await self.check_anki_status()
+        self.set_interval(3, self.check_anki_status)
 
     async def check_anki_status(self) -> None:
         anki_label = self.query_one("#anki-status", Static)
@@ -353,13 +167,16 @@ class AnkiVertApp(App):
         self.set_status("scanning…")
         try:
             ledger = load_ledger()
+            classes = DEFAULT_CLASSES or discover_classes(vault)
             unique_cards, new_cards, md_dups = collect_cards(
-                vault, list(DEFAULT_CLASSES), ledger=ledger, verbose=False
+                vault, classes, ledger=ledger, verbose=False
             )
+            stale = find_stale_decks(vault, ledger)
             self._populate_table(new_cards)
-            self.set_status(
-                f"new {len(new_cards)}, synced {len(unique_cards) - len(new_cards)}"
-            )
+            parts = [f"new {len(new_cards)}", f"synced {len(unique_cards) - len(new_cards)}"]
+            if stale:
+                parts.append(f"stale {len(stale)}")
+            self.set_status(", ".join(parts))
         except Exception as exc:
             self.set_status(f"error: {exc}")
 
@@ -368,19 +185,34 @@ class AnkiVertApp(App):
         self.set_status(f"{label}…")
         try:
             ledger = load_ledger()
+            classes = DEFAULT_CLASSES or discover_classes(vault)
             _, new_cards, _ = collect_cards(
-                vault, list(DEFAULT_CLASSES), ledger=ledger, verbose=False
+                vault, classes, ledger=ledger, verbose=False
             )
-            result = await sync_cards(new_cards, dry_run=dry_run, verbose=False)
-            if not dry_run:
+            if dry_run:
+                stale = find_stale_decks(vault, ledger)
+                result = await sync_cards(new_cards, dry_run=True, verbose=False)
+                parts = [f"dry-run: {result['added']} add"]
+                if stale:
+                    parts.append(f"{len(stale)} remove")
+                self.set_status(", ".join(parts))
+            else:
+                stale = await remove_stale_decks(vault, ledger)
+                result = await sync_cards(new_cards, dry_run=False, verbose=False)
                 record_cards_in_ledger(ledger, new_cards, result["note_ids"])
                 save_ledger(ledger)
-            prefix = "dry-run" if dry_run else "synced"
-            self.set_status(f"{prefix}: {result['added']} add")
+                parts = [f"synced: {result['added']} add"]
+                if stale:
+                    parts.append(f"{len(stale)} removed")
+                self.set_status(", ".join(parts))
             await self.check_anki_status()
         except Exception as exc:
             self.set_status(f"error: {exc}")
 
 
-if __name__ == "__main__":
+def main() -> None:
     AnkiVertApp().run()
+
+
+if __name__ == "__main__":
+    main()
