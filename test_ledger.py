@@ -124,3 +124,16 @@ def test_record_cards_note_id_none_when_missing(tmp_path):
     card = _card()
     record_cards_in_ledger(ledger, [card], {})
     assert ledger["card_index"][card.stable_tag]["note_id"] is None
+
+
+def test_record_cards_replaces_existing_deck_entry(tmp_path):
+    ledger = {"version": 2, "decks": {}, "card_index": {}}
+    original = _card(back="old")
+    changed = _card(back="new")
+    record_cards_in_ledger(ledger, [original], {original.stable_tag: 99})
+    record_cards_in_ledger(ledger, [changed], {changed.stable_tag: 99})
+
+    assert ledger["card_index"][changed.stable_tag]["back"] == "new"
+    assert ledger["decks"][changed.deck]["cards"] == [
+        {"front": changed.front, "back": "new", "stable_tag": changed.stable_tag}
+    ]
