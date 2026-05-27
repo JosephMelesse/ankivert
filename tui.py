@@ -12,7 +12,7 @@ from textual.widgets import Button, DataTable, Footer, Input, Label, Static
 from ankiconnect_client import ankiconnect
 from card_parser import discover_classes
 from config import DEFAULT_CLASSES, DEFAULT_VAULT_PATH
-from ledger import load_ledger, record_cards_in_ledger, save_ledger
+from ledger import load_ledger, save_ledger
 from sync_service import collect_cards, find_stale_decks, remove_stale_decks, sync_cards
 
 DEFAULT_VAULT = DEFAULT_VAULT_PATH
@@ -173,7 +173,14 @@ class AnkiVertApp(App):
             )
             stale = find_stale_decks(vault, ledger)
             self._populate_table(new_cards)
-            parts = [f"new {len(new_cards)}", f"synced {len(unique_cards) - len(new_cards)}"]
+            ledger_cards = ledger.get("card_index", {})
+            add_count = sum(1 for c in new_cards if c.stable_tag not in ledger_cards)
+            update_count = len(new_cards) - add_count
+            parts = [
+                f"add {add_count}",
+                f"update {update_count}",
+                f"current {len(unique_cards) - len(new_cards)}",
+            ]
             if stale:
                 parts.append(f"stale {len(stale)}")
             self.set_status(", ".join(parts))
@@ -191,17 +198,27 @@ class AnkiVertApp(App):
             )
             if dry_run:
                 stale = find_stale_decks(vault, ledger)
-                result = await sync_cards(new_cards, dry_run=True, verbose=False)
-                parts = [f"dry-run: {result['added']} add"]
+                ledger_cards = ledger.get("card_index", {})
+                add_count = sum(1 for c in new_cards if c.stable_tag not in ledger_cards)
+                update_count = len(new_cards) - add_count
+                parts = [f"dry-run: {add_count} add", f"{update_count} update"]
                 if stale:
                     parts.append(f"{len(stale)} remove")
                 self.set_status(", ".join(parts))
             else:
                 stale = await remove_stale_decks(vault, ledger)
-                result = await sync_cards(new_cards, dry_run=False, verbose=False)
-                record_cards_in_ledger(ledger, new_cards, result["note_ids"])
+                result = await sync_cards(
+                    new_cards,
+                    dry_run=False,
+                    verbose=False,
+                    ledger=ledger,
+                    save_each=True,
+                )
                 save_ledger(ledger)
-                parts = [f"synced: {result['added']} add"]
+                parts = [
+                    f"synced: {result['added']} add",
+                    f"{result['updated']} update",
+                ]
                 if stale:
                     parts.append(f"{len(stale)} removed")
                 self.set_status(", ".join(parts))

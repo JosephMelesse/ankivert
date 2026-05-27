@@ -1,6 +1,6 @@
 # ankivert
 
-Converts Obsidian markdown notes into Anki flashcards. Scans a vault directory for cards written in a simple `Q:` / `A:` syntax, then syncs them to Anki via the AnkiConnect plugin. A persistent ledger tracks which cards have already been added so re-runs never create duplicates.
+Converts Obsidian markdown notes into Anki flashcards. Scans a vault directory for cards written in a simple `Q:` / `A:` syntax, then syncs them to Anki via the AnkiConnect plugin. A persistent ledger tracks which cards have already been synced so re-runs update existing notes instead of creating duplicates.
 
 ---
 
@@ -125,7 +125,7 @@ HAVING filters groups after aggregation.
 
 ## How deduplication works
 
-Each card is assigned a stable ID derived from its file path, question text, and position in the file. This ID is stored in `.ankivert_ledger.json` after a successful sync. On subsequent runs, cards already in the ledger are skipped, so renaming your vault root or moving the project directory does not cause duplicates.
+Each card is assigned a stable ID derived from its file path, question text, and position in the file. This ID is stored in `.ankivert_ledger.json` after a successful sync and added to Anki as a note tag. On subsequent runs, ankivert searches Anki for that tag and updates the existing note when the card content changes, so renaming your vault root or moving the project directory does not cause duplicates.
 
 ## Running tests
 

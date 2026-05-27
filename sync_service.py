@@ -2,8 +2,20 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ankiconnect_client import add_basic_note, delete_decks, ensure_deck
-from card_parser import build_deck_name, discover_classes, extract_cards_from_markdown, iter_md_files
+from ankiconnect_client import (
+    add_basic_note,
+    delete_decks,
+    ensure_deck,
+    find_note_ids_by_tag,
+    update_basic_note,
+)
+from card_parser import (
+    build_deck_name,
+    discover_classes,
+    extract_cards_from_markdown,
+    iter_md_files,
+)
+from ledger import record_cards_in_ledger, save_ledger
 from models import Card
 
 
@@ -11,10 +23,11 @@ def collect_cards(
     vault: Path, classes: list[str], ledger: dict, verbose: bool = False
 ) -> tuple[list[Card], list[Card], int]:
     """
-    Returns (unique_cards, new_cards, markdown_dup_count).
+    Returns (unique_cards, sync_cards, markdown_dup_count).
 
     unique_cards    — all cards found in the vault, deduplicated by stable_tag
-    new_cards       — subset of unique_cards not yet recorded in the ledger
+    sync_cards      — subset of unique_cards that are missing from the ledger
+                      or differ from the ledger's recorded fields
     markdown_dup_count — cards skipped because a prior card in the same run
                          shared the same stable_tag (true markdown duplicates)
     """
@@ -38,13 +51,25 @@ def collect_cards(
     unique_cards = list(seen.values())
 
     ledger_cards = ledger.get("card_index", {})
-    new_cards = [c for c in unique_cards if c.stable_tag not in ledger_cards]
+    new_cards = [
+        c for c in unique_cards
+        if _needs_sync(c, ledger_cards.get(c.stable_tag, {}))
+    ]
 
     if verbose and new_cards:
         for c in new_cards:
             print(f"  - {c.front[:70]!r}  [{c.stable_tag}]")
 
     return unique_cards, new_cards, markdown_dup_count
+
+
+def _needs_sync(card: Card, ledger_entry: dict) -> bool:
+    return (
+        not ledger_entry
+        or ledger_entry.get("deck") != card.deck
+        or ledger_entry.get("front") != card.front
+        or ledger_entry.get("back") != card.back
+    )
 
 
 def find_stale_decks(vault: Path, ledger: dict) -> list[str]:
@@ -72,16 +97,34 @@ async def remove_stale_decks(vault: Path, ledger: dict) -> list[str]:
     return stale
 
 
-async def sync_cards(cards: list[Card], dry_run: bool = False, verbose: bool = True) -> dict:
+async def sync_cards(
+    cards: list[Card],
+    dry_run: bool = False,
+    verbose: bool = True,
+    ledger: dict | None = None,
+    save_each: bool = False,
+) -> dict:
     decks = sorted({c.deck for c in cards})
     if not dry_run:
         for d in decks:
             await ensure_deck(d)
     note_ids: dict[str, int] = {}
+    added = 0
+    updated = 0
     for c in cards:
-        note_id = await add_basic_note(c, dry_run=dry_run, verbose=verbose)
+        existing_note_ids = [] if dry_run else await find_note_ids_by_tag(c.stable_tag)
+        if existing_note_ids:
+            note_id = await update_basic_note(existing_note_ids[0], c, verbose=verbose)
+            updated += 1
+        else:
+            note_id = await add_basic_note(c, dry_run=dry_run, verbose=verbose)
+            added += 1
         if note_id is not None:
             note_ids[c.stable_tag] = note_id
-    # dry_run: report how many would be added; live: count only confirmed note_ids
-    added = len(cards) if dry_run else len(note_ids)
-    return {"added": added, "decks": decks, "note_ids": note_ids}
+            if ledger is not None:
+                record_cards_in_ledger(ledger, [c], {c.stable_tag: note_id})
+                if save_each:
+                    save_ledger(ledger)
+    if dry_run:
+        added = len(cards)
+    return {"added": added, "updated": updated, "decks": decks, "note_ids": note_ids}

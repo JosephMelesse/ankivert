@@ -29,6 +29,26 @@ async def delete_decks(deck_names: list[str]) -> None:
     await ankiconnect("deleteDecks", {"decks": deck_names, "cardsToo": True})
 
 
+async def find_note_ids_by_tag(tag: str) -> list[int]:
+    result = await ankiconnect("findNotes", {"query": f"tag:{tag}"})
+    return [int(note_id) for note_id in result or []]
+
+
+async def update_basic_note(note_id: int, card: Card, verbose: bool = True) -> int:
+    await ankiconnect(
+        "updateNoteFields",
+        {
+            "note": {
+                "id": note_id,
+                "fields": {"Front": card.front, "Back": card.back},
+            }
+        },
+    )
+    if verbose:
+        print(f"[update] note_id={note_id} deck={card.deck} tag={card.stable_tag}")
+    return note_id
+
+
 async def add_basic_note(card: Card, dry_run: bool = False, verbose: bool = True) -> int | None:
     if dry_run:
         if verbose:

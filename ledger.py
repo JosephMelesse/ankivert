@@ -53,9 +53,17 @@ def save_ledger(data: dict) -> None:
     LEDGER_PATH.write_text(json.dumps(data, indent=2, sort_keys=True), encoding="utf-8")
 
 
-def record_cards_in_ledger( ledger: dict, cards: list[Card], note_ids: dict[str, int]) -> None:
+def record_cards_in_ledger(ledger: dict, cards: list[Card], note_ids: dict[str, int]) -> None:
     now = datetime.now(timezone.utc).isoformat()
     for card in cards:
+        previous = ledger["card_index"].get(card.stable_tag, {})
+        previous_deck = previous.get("deck")
+        if previous_deck in ledger["decks"]:
+            ledger["decks"][previous_deck]["cards"] = [
+                existing
+                for existing in ledger["decks"][previous_deck].get("cards", [])
+                if existing.get("stable_tag") != card.stable_tag
+            ]
         ledger["card_index"][card.stable_tag] = {
             "deck": card.deck,
             "front": card.front,
@@ -66,5 +74,5 @@ def record_cards_in_ledger( ledger: dict, cards: list[Card], note_ids: dict[str,
         }
         ledger["decks"].setdefault(card.deck, {"cards": []})
         ledger["decks"][card.deck]["cards"].append(
-            {"front": card.front, "back": card.back}
+            {"front": card.front, "back": card.back, "stable_tag": card.stable_tag}
         )
