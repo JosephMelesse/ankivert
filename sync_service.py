@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ankiconnect_client import add_basic_note, ensure_deck
-from card_parser import build_deck_name, extract_cards_from_markdown, iter_md_files
+from ankiconnect_client import add_basic_note, delete_decks, ensure_deck
+from card_parser import build_deck_name, discover_classes, extract_cards_from_markdown, iter_md_files
 from models import Card
 
 
@@ -45,6 +45,31 @@ def collect_cards(
             print(f"  - {c.front[:70]!r}  [{c.stable_tag}]")
 
     return unique_cards, new_cards, markdown_dup_count
+
+
+def find_stale_decks(vault: Path, ledger: dict) -> list[str]:
+    """Return deck names in the ledger whose top-level class dir no longer exists."""
+    current_classes = set(discover_classes(vault))
+    return [
+        deck for deck in ledger.get("decks", {})
+        if deck.split("::")[0] not in current_classes
+    ]
+
+
+async def remove_stale_decks(vault: Path, ledger: dict) -> list[str]:
+    """Delete stale decks from Anki and clean them from the ledger. Returns removed deck names."""
+    stale = find_stale_decks(vault, ledger)
+    if not stale:
+        return []
+    await delete_decks(stale)
+    stale_set = set(stale)
+    for deck in stale:
+        del ledger["decks"][deck]
+    ledger["card_index"] = {
+        tag: info for tag, info in ledger["card_index"].items()
+        if info.get("deck") not in stale_set
+    }
+    return stale
 
 
 async def sync_cards(cards: list[Card], dry_run: bool = False, verbose: bool = True) -> dict:

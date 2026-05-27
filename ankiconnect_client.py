@@ -25,6 +25,10 @@ async def ensure_deck(deck_name: str) -> None:
     await ankiconnect("createDeck", {"deck": deck_name})
 
 
+async def delete_decks(deck_names: list[str]) -> None:
+    await ankiconnect("deleteDecks", {"decks": deck_names, "cardsToo": True})
+
+
 async def add_basic_note(card: Card, dry_run: bool = False, verbose: bool = True) -> int | None:
     if dry_run:
         if verbose:
