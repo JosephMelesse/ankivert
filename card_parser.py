@@ -102,6 +102,12 @@ def extract_cards_from_markdown( vault_root: Path, md_path: Path, deck: str, bas
     return cards
 
 
+def discover_classes(vault: Path) -> list[str]:
+    if not vault.exists():
+        return []
+    return sorted(p.name for p in vault.iterdir() if p.is_dir() and not p.name.startswith("."))
+
+
 def iter_md_files(vault: Path, class_names: list[str]) -> Iterable[tuple[str, Path]]:
     for cls_name in class_names:
         cls_dir = vault / cls_name
