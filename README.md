@@ -41,14 +41,64 @@ Then edit `local_config.json`:
 
 `local_config.json` is gitignored and never committed. If it is absent, the vault path field in the TUI starts empty.
 
-The class list (which subdirectories to scan) is set in `config.py` under `DEFAULT_CLASSES`.
+By default ankivert scans every non-hidden subdirectory of your vault. To restrict scanning to specific subdirectories, add a `"classes"` list:
+
+```json
+{
+  "vault_path": "~/Documents/MyVault",
+  "classes": ["sql", "python", "dsa"]
+}
+```
+
+## Vault structure and deck names
+
+Anki uses `::` as a deck separator, so a deck named `sql::joins` appears in Anki as a subdeck **joins** nested inside **sql**. ankivert derives deck names from your directory layout:
+
+- Each **immediate subdirectory** of your vault becomes a top-level deck.
+- Each **markdown filename** (without the `.md` extension) becomes a subdeck inside it.
+
+```
+MyVault/
+├── sql/
+│   ├── joins.md          →  sql::joins
+│   ├── indexes.md        →  sql::indexes
+│   └── aggregates.md     →  sql::aggregates
+├── python/
+│   ├── lists.md          →  python::lists
+│   └── decorators.md     →  python::decorators
+└── dsa/
+    ├── sorting.md        →  dsa::sorting
+    └── trees.md          →  dsa::trees
+```
+
+This creates the following deck tree in Anki:
+
+```
+dsa
+  sorting
+  trees
+python
+  decorators
+  lists
+sql
+  aggregates
+  indexes
+  joins
+```
+
+**Tips for clean deck names:**
+
+- Name subject directories after the course or topic (`sql`, `python`, `system_design`).
+- Name files after the specific chapter or concept (`joins`, `ch3`, `big_o`). The filename becomes the subdeck label visible in Anki's deck browser.
+- Use `_` or `-` instead of spaces if you prefer (`binary_search.md` → `dsa::binary_search`). Anki renders them as-is.
+- Files nested deeper than one level are still discovered, but only the filename determines the subdeck — the intermediate directory name is ignored. Keep notes flat within each subject directory if the nesting matters to you.
 
 ## Usage
 
 Start Anki, then launch the TUI:
 
 ```bash
-python tui.py
+ankivert
 ```
 
 | Key / Button | Action |
@@ -73,8 +123,6 @@ A: WHERE filters rows before aggregation.
 HAVING filters groups after aggregation.
 ```
 
-Decks are named automatically as `class_name::filename` (e.g. `sql::joins`).
-
 ## How deduplication works
 
 Each card is assigned a stable ID derived from its file path, question text, and position in the file. This ID is stored in `.ankivert_ledger.json` after a successful sync. On subsequent runs, cards already in the ledger are skipped, so renaming your vault root or moving the project directory does not cause duplicates.
@@ -82,5 +130,5 @@ Each card is assigned a stable ID derived from its file path, question text, and
 ## Running tests
 
 ```bash
-pytest test_card_parser.py -v
+pytest -v
 ```
