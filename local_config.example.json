@@ -1,3 +1,4 @@
 {
-  "vault_path": "~/Documents/MyVault"
+  "vault_path": "~/Documents/MyVault",
+  "classes": ["sql", "python", "dsa"]
 }
