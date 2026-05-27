@@ -2,21 +2,21 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ankiconnect_client import (
+from .ankiconnect_client import (
     add_basic_note,
     delete_decks,
     ensure_deck,
     find_note_ids_by_tag,
     update_basic_note,
 )
-from card_parser import (
+from .card_parser import (
     build_deck_name,
     discover_classes,
     extract_cards_from_markdown,
     iter_md_files,
 )
-from ledger import record_cards_in_ledger, save_ledger
-from models import Card
+from .ledger import record_cards_in_ledger, save_ledger
+from .models import Card
 
 
 def collect_cards(

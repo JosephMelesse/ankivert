@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent))
-
-from ledger import load_ledger, record_cards_in_ledger, save_ledger
-from models import Card
+from ankivert.ledger import load_ledger, record_cards_in_ledger, save_ledger
+from ankivert.models import Card
 
 
 def _card(front: str = "Q?", back: str = "A", deck: str = "deck", tag: str = "ankivert_id_aabbccdd1122") -> Card:
@@ -22,7 +19,7 @@ def _card(front: str = "Q?", back: str = "A", deck: str = "deck", tag: str = "an
 
 
 def test_load_ledger_missing_file(tmp_path, monkeypatch):
-    monkeypatch.setattr("ledger.LEDGER_PATH", tmp_path / "no_ledger.json")
+    monkeypatch.setattr("ankivert.ledger.LEDGER_PATH", tmp_path / "no_ledger.json")
     data = load_ledger()
     assert data == {"version": 2, "decks": {}, "card_index": {}}
 
@@ -30,7 +27,7 @@ def test_load_ledger_missing_file(tmp_path, monkeypatch):
 def test_load_ledger_invalid_json(tmp_path, monkeypatch):
     path = tmp_path / "ledger.json"
     path.write_text("not json", encoding="utf-8")
-    monkeypatch.setattr("ledger.LEDGER_PATH", path)
+    monkeypatch.setattr("ankivert.ledger.LEDGER_PATH", path)
     data = load_ledger()
     assert data == {"version": 2, "decks": {}, "card_index": {}}
 
@@ -38,7 +35,7 @@ def test_load_ledger_invalid_json(tmp_path, monkeypatch):
 def test_load_ledger_non_dict_json(tmp_path, monkeypatch):
     path = tmp_path / "ledger.json"
     path.write_text("[1, 2, 3]", encoding="utf-8")
-    monkeypatch.setattr("ledger.LEDGER_PATH", path)
+    monkeypatch.setattr("ankivert.ledger.LEDGER_PATH", path)
     data = load_ledger()
     assert data == {"version": 2, "decks": {}, "card_index": {}}
 
@@ -58,7 +55,7 @@ def test_load_ledger_v1_migration(tmp_path, monkeypatch):
         }
     }
     path.write_text(json.dumps(v1), encoding="utf-8")
-    monkeypatch.setattr("ledger.LEDGER_PATH", path)
+    monkeypatch.setattr("ankivert.ledger.LEDGER_PATH", path)
     data = load_ledger()
     assert "card_index" in data
     assert "ankivert_id_abc123" in data["card_index"]
@@ -74,7 +71,7 @@ def test_load_ledger_v2_round_trip(tmp_path, monkeypatch):
         "card_index": {"tag1": {"deck": "d", "front": "F", "back": "B", "source_path": "", "created_at": "", "note_id": 1}},
     }
     path.write_text(json.dumps(v2), encoding="utf-8")
-    monkeypatch.setattr("ledger.LEDGER_PATH", path)
+    monkeypatch.setattr("ankivert.ledger.LEDGER_PATH", path)
     data = load_ledger()
     assert data["version"] == 2
     assert "tag1" in data["card_index"]
@@ -87,7 +84,7 @@ def test_load_ledger_v2_round_trip(tmp_path, monkeypatch):
 
 def test_save_and_reload(tmp_path, monkeypatch):
     path = tmp_path / "ledger.json"
-    monkeypatch.setattr("ledger.LEDGER_PATH", path)
+    monkeypatch.setattr("ankivert.ledger.LEDGER_PATH", path)
     original = {"version": 2, "decks": {}, "card_index": {"t": {"deck": "d"}}}
     save_ledger(original)
     assert json.loads(path.read_text()) == original

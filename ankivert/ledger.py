@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
-from config import LEDGER_PATH
-from models import Card
+from .config import LEDGER_PATH
+from .models import Card
 
 
 def load_ledger() -> dict:

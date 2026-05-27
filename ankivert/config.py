@@ -7,9 +7,10 @@ from pathlib import Path
 ANKI_URL = "http://127.0.0.1:8765"
 ANKI_CONNECT_VERSION = 6
 
-LEDGER_PATH = Path(__file__).resolve().parent / ".ankivert_ledger.json"
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+LEDGER_PATH = _PROJECT_ROOT / ".ankivert_ledger.json"
 
-_LOCAL_CONFIG_PATH = Path(__file__).resolve().parent / "local_config.json"
+_LOCAL_CONFIG_PATH = _PROJECT_ROOT / "local_config.json"
 
 
 def _load_local_config() -> dict:

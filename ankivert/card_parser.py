@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 from typing import Iterable
 
-from models import Card
+from .models import Card
 
 
 def stable_id_tag(vault_root: Path, md_path: Path, question: str, ordinal: int) -> str:

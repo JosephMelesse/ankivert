@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import asyncio
-import sys
 from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent))
-
-from models import Card
-from sync_service import collect_cards, sync_cards
+from ankivert.models import Card
+from ankivert.sync_service import collect_cards, sync_cards
 
 
 def _make_vault(tmp_path: Path, files: dict[str, str]) -> Path:
@@ -153,10 +150,10 @@ def test_sync_cards_updates_existing_note(monkeypatch):
         calls.append(("add", card.stable_tag))
         return 456
 
-    monkeypatch.setattr("sync_service.ensure_deck", fake_ensure_deck)
-    monkeypatch.setattr("sync_service.find_note_ids_by_tag", fake_find)
-    monkeypatch.setattr("sync_service.update_basic_note", fake_update)
-    monkeypatch.setattr("sync_service.add_basic_note", fake_add)
+    monkeypatch.setattr("ankivert.sync_service.ensure_deck", fake_ensure_deck)
+    monkeypatch.setattr("ankivert.sync_service.find_note_ids_by_tag", fake_find)
+    monkeypatch.setattr("ankivert.sync_service.update_basic_note", fake_update)
+    monkeypatch.setattr("ankivert.sync_service.add_basic_note", fake_add)
 
     result = asyncio.run(sync_cards([_card()], dry_run=False, verbose=False))
 
@@ -182,10 +179,10 @@ def test_sync_cards_records_each_successful_card(monkeypatch):
         nonlocal saves
         saves += 1
 
-    monkeypatch.setattr("sync_service.ensure_deck", fake_ensure_deck)
-    monkeypatch.setattr("sync_service.find_note_ids_by_tag", fake_find)
-    monkeypatch.setattr("sync_service.add_basic_note", fake_add)
-    monkeypatch.setattr("sync_service.save_ledger", fake_save)
+    monkeypatch.setattr("ankivert.sync_service.ensure_deck", fake_ensure_deck)
+    monkeypatch.setattr("ankivert.sync_service.find_note_ids_by_tag", fake_find)
+    monkeypatch.setattr("ankivert.sync_service.add_basic_note", fake_add)
+    monkeypatch.setattr("ankivert.sync_service.save_ledger", fake_save)
 
     ledger = {"version": 2, "decks": {}, "card_index": {}}
     result = asyncio.run(

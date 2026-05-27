@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import httpx
 
-from config import ANKI_CONNECT_VERSION, ANKI_URL
-from models import Card
+from .config import ANKI_CONNECT_VERSION, ANKI_URL
+from .models import Card
 
 
 async def ankiconnect(action: str, params: dict | None = None):

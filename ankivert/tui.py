@@ -9,11 +9,11 @@ from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, DataTable, Footer, Input, Label, Static
 
-from ankiconnect_client import ankiconnect
-from card_parser import discover_classes
-from config import DEFAULT_CLASSES, DEFAULT_VAULT_PATH
-from ledger import load_ledger, save_ledger
-from sync_service import collect_cards, find_stale_decks, remove_stale_decks, sync_cards
+from .ankiconnect_client import ankiconnect
+from .card_parser import discover_classes
+from .config import DEFAULT_CLASSES, DEFAULT_VAULT_PATH
+from .ledger import load_ledger, save_ledger
+from .sync_service import collect_cards, find_stale_decks, remove_stale_decks, sync_cards
 
 DEFAULT_VAULT = DEFAULT_VAULT_PATH
 
