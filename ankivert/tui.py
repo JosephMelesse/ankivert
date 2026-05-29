@@ -13,7 +13,12 @@ from .ankiconnect_client import ankiconnect
 from .card_parser import discover_classes
 from .config import DEFAULT_CLASSES, DEFAULT_VAULT_PATH
 from .ledger import load_ledger, save_ledger
-from .sync_service import collect_cards, find_stale_decks, remove_stale_decks, sync_cards
+from .sync_service import (
+    collect_cards,
+    find_stale_decks,
+    remove_stale_decks,
+    sync_cards,
+)
 
 DEFAULT_VAULT = DEFAULT_VAULT_PATH
 
@@ -60,6 +65,8 @@ class AnkiVertApp(App):
         Binding("d", "dry_run", "Dry-run"),
         Binding("j", "scroll_down", "Down", show=False),
         Binding("k", "scroll_up", "Up", show=False),
+        Binding("l", "scroll_right", "Right", show=False),
+        Binding("h", "scroll_left", "Left", show=False),
     ]
 
     def compose(self) -> ComposeResult:
@@ -140,6 +147,12 @@ class AnkiVertApp(App):
     def action_scroll_up(self) -> None:
         self.query_one(DataTable).action_scroll_up()
 
+    def action_scroll_left(self) -> None:
+        self.query_one(DataTable).action_scroll_left()
+
+    def action_scroll_right(self) -> None:
+        self.query_one(DataTable).action_scroll_right()
+
     async def on_button_pressed_by_id(self, button_id: str) -> None:
         vault_str = self.vault_path
         if not vault_str:
@@ -199,7 +212,9 @@ class AnkiVertApp(App):
             if dry_run:
                 stale = find_stale_decks(vault, ledger)
                 ledger_cards = ledger.get("card_index", {})
-                add_count = sum(1 for c in new_cards if c.stable_tag not in ledger_cards)
+                add_count = sum(
+                    1 for c in new_cards if c.stable_tag not in ledger_cards
+                )
                 update_count = len(new_cards) - add_count
                 parts = [f"dry-run: {add_count} add", f"{update_count} update"]
                 if stale:
