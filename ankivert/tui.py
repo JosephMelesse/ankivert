@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from textual import events
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
@@ -30,6 +31,12 @@ BANNER = """\
 ██║  ██║██║ ╚████║██║  ██╗██║ ╚████╔╝ ███████╗██║  ██║   ██║
 ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝   ╚═╝   \
 """
+
+# Compact banner shown when the terminal is too narrow for the full art.
+BANNER_SMALL = "✦ anki_vert ✦"
+
+# Columns required to render BANNER without wrapping (widest line + padding).
+BANNER_WIDTH = max(len(line) for line in BANNER.splitlines()) + 4
 
 
 class QuitConfirm(ModalScreen[bool]):
@@ -91,8 +98,16 @@ class AnkiVertApp(App):
         table = self.query_one(DataTable)
         table.add_columns("deck", "front", "back")
         table.focus()
+        self._update_banner(self.size.width)
         await self.check_anki_status()
         self.set_interval(3, self.check_anki_status)
+
+    def on_resize(self, event: events.Resize) -> None:
+        self._update_banner(event.size.width)
+
+    def _update_banner(self, width: int) -> None:
+        banner = self.query_one("#banner", Static)
+        banner.update(BANNER if width >= BANNER_WIDTH else BANNER_SMALL)
 
     async def check_anki_status(self) -> None:
         anki_label = self.query_one("#anki-status", Static)
